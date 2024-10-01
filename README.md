@@ -117,16 +117,25 @@
 - `id` _(integer)_: Идентификатор агента.
 
 **Пример запроса:**  
-`GET http://89.110.118.205/api/agents/1`
+`GET http://89.110.118.205/api/agents/2`
 
 **Пример ответа:**
 ```json
 {
-  "id": 1,
-  "name": "Агент Иванов",
-  "agent_type": "Оптовый",
-  "phone": "+79991234567",
-  "priority": 5
+  "ID": 4,
+  "Title": "Агент Петрова",
+  "AgentTypeID": 2,
+  "Address": "ул. Гагарина, д. 12",
+  "INN": "4567890123",
+  "KPP": "654321098",
+  "DirectorName": "Петр Петров",
+  "Phone": "+79991234570",
+  "Email": "petrov@example.com",
+  "Logo": null,
+  "Priority": 100,
+  "SalesCount": "710",
+  "TotalSales": "582975.00",
+  "Discount": 25
 }
 ```
 
