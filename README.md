@@ -82,7 +82,7 @@ npm start
 
 ### Доска задач
 
-Доска с задачами находится [здесь](https://link-to-task-board). Выбирайте задачи по вкусу из файла задания, самостоятельно заносите их на доску, обновляйте статус и назначайте себя ответственным.
+Доска с задачами находится [здесь](https://github.com/users/Daniil11ru/projects/2/views/1). Выбирайте задачи по вкусу из файла задания, самостоятельно заносите их на доску, обновляйте статус и назначайте себя ответственным.
 
 ### Git Workflow
 
@@ -101,7 +101,7 @@ npm start
   git push origin feature/название-задачи
   ```
 
-Подробная инструкция доступна [здесь](https://nvie.com/posts/a-successful-git-branching-model/).
+Подробная инструкция доступна [здесь](https://www.youtube.com/watch?v=8lGpZkjnkt4).
 
 ### Компоненты
 
@@ -120,7 +120,7 @@ npm start
 
 ### Запуск в WSL
 
-Для пользователей Windows рекомендуется запускать проект в [WSL](https://docs.microsoft.com/ru-ru/windows/wsl/install). Это позволит работать в Linux-среде, сохраняя удобство Windows.
+Для пользователей Windows рекомендуется запускать проект в [WSL](https://learn.microsoft.com/en-us/windows/dev-environment/javascript/nodejs-on-wsl). Это позволит работать в Linux-среде, сохраняя удобство Windows.
 
 Примерная инструкция:
 
