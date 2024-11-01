@@ -19,7 +19,8 @@
 6. [Развертывание фронтенда](#развертывание-фронтенда)
    - [Развертывание с помощью Nginx](#развертывание-с-помощью-nginx)
    - [Развертывание с помощью Docker](#развертывание-с-помощью-docker)
-7. [Документация API](#подробная-документация-по-api)
+7. [Развертывание бекенда](#развертывание-бекенда)
+8. [Документация API](#подробная-документация-по-api)
 
 ## Введение
 
@@ -231,6 +232,195 @@ npm start
    ```bash
    docker-compose up -d
    ```
+
+## Развертывание бекенда
+
+### Предварительные требования
+
+Перед началом развертывания бекенда убедитесь, что у вас установлены следующие компоненты:
+
+- **Nginx**
+- **PHP** (рекомендуется версия 8.2)
+- **PHP-FPM**
+- **Git**
+
+### Шаги по развертыванию
+
+#### 1. Клонирование репозитория
+
+Склонируйте репозиторий бекенда на ваш сервер:
+
+```bash
+git clone git@github.com:yourname/backend.git /var/www/html/aermolenko
+```
+
+#### 2. Установка зависимостей
+
+Перейдите в директорию проекта и установите необходимые зависимости с помощью Composer:
+
+```bash
+cd /var/www/html/aermolenko
+composer install
+```
+
+> **Примечание:** Убедитесь, что Composer установлен на вашем сервере. Если нет, установите его, следуя [официальной инструкции](https://getcomposer.org/download/).
+
+#### 3. Настройка прав доступа
+
+Установите правильные права доступа для директорий:
+
+```bash
+sudo chown -R www-data:www-data /var/www/html/aermolenko
+sudo find /var/www/html/aermolenko -type f -exec chmod 644 {} \;
+sudo find /var/www/html/aermolenko -type d -exec chmod 755 {} \;
+```
+
+#### 4. Настройка Nginx
+
+Создайте или отредактируйте файл конфигурации Nginx для вашего бекенда. Ниже приведена примерная конфигурация:
+
+```nginx
+server {
+    listen 80;
+    server_name _;
+
+    root /var/www/html;
+    index index.html index.nginx-debian.html;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    location /uploads/logo/ {
+        alias /var/www/html/aermolenko/public/uploads/logo/;
+        autoindex off;
+    }
+
+    location /api/ {
+        proxy_pass http://127.0.0.1:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        proxy_pass_header Access-Control-Allow-Origin;
+        proxy_pass_header Access-Control-Allow-Methods;
+        proxy_pass_header Access-Control-Allow-Headers;
+        proxy_pass_header Access-Control-Allow-Credentials;
+
+        if ($request_method = OPTIONS) {
+            add_header Access-Control-Allow-Origin *;
+            add_header Access-Control-Allow-Methods "GET, POST, OPTIONS, DELETE, PUT";
+            add_header Access-Control-Allow-Headers "Authorization, Content-Type, X-Requested-With";
+            add_header Access-Control-Allow-Credentials true;
+            return 204;
+        }
+    }
+}
+
+server {
+    listen 8080;
+    server_name _;
+
+    root /var/www/html/aermolenko/public;
+    index index.php;
+
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    location ~ \.php$ {
+        include snippets/fastcgi-php.conf;
+        fastcgi_pass unix:/run/php/php8.2-fpm.sock;
+    }
+
+    location ~ /\.ht {
+        deny all;
+    }
+}
+```
+
+##### Пояснение конфигурации
+
+- **Первый серверный блок** (порт 80):
+  - Обрабатывает запросы к фронтенду.
+  - Проксирует запросы к API на бэкенд, работающий на порту 8080.
+  - Настраивает CORS для корректного взаимодействия фронтенда с бэкендом.
+  - Обрабатывает запросы к статическим файлам, таким как логотипы.
+
+- **Второй серверный блок** (порт 8080):
+  - Обрабатывает запросы к бэкенду.
+  - Настраивает обработку PHP-файлов через PHP-FPM.
+  - Защищает скрытые файлы и директории (например, `.htaccess`).
+
+#### 5. Активация конфигурации и перезапуск Nginx
+
+Сохраните конфигурационный файл (обычно в директории `/etc/nginx/sites-available/`) и создайте символическую ссылку в `/etc/nginx/sites-enabled/`:
+
+```bash
+sudo ln -s /etc/nginx/sites-available/your_backend_conf /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl restart nginx
+```
+
+> **Примечание:** Замените `your_backend_conf` на имя вашего конфигурационного файла.
+
+#### 6. Проверка работы PHP-FPM
+
+Убедитесь, что PHP-FPM запущен и слушает сокет `php8.2-fpm.sock`:
+
+```bash
+sudo systemctl status php8.2-fpm
+```
+
+Если сервис не запущен, запустите его:
+
+```bash
+sudo systemctl start php8.2-fpm
+```
+
+#### 7. Настройка переменных окружения
+
+Скопируйте файл переменных окружения и настройте необходимые параметры (например, доступ к базе данных):
+
+```bash
+cp .env.example .env
+nano .env
+```
+
+#### 8. Тестирование приложения
+
+Откройте браузер и перейдите по адресу вашего сервера, чтобы убедиться, что бэкенд работает корректно.
+
+### Решение возможных проблем
+
+- **Ошибка 502 Bad Gateway**:
+  - Проверьте, что PHP-FPM запущен и сокет указан правильно в конфигурации Nginx.
+  - Убедитесь, что пользователь, под которым работает Nginx, имеет доступ к сокету PHP-FPM.
+
+- **Проблемы с правами доступа**:
+  - Проверьте права на директории и файлы в проекте.
+  - Убедитесь, что веб-сервер имеет доступ к необходимым файлам и директориям.
+
+- **Ошибки при работе с API**:
+  - Проверьте настройки CORS в конфигурации Nginx.
+  - Убедитесь, что бэкенд корректно обрабатывает запросы и возвращает ожидаемые ответы.
+
+### Дополнительные рекомендации
+
+- **Мониторинг логов**:
+  - Логи Nginx обычно находятся в `/var/log/nginx/error.log` и `/var/log/nginx/access.log`.
+  - Логи PHP-FPM можно найти в `/var/log/php8.2-fpm.log` или в указанном в конфигурации месте.
+
+- **Обновление зависимостей**:
+  - Регулярно обновляйте зависимости проекта с помощью Composer.
+  - Перед обновлением убедитесь в совместимости новых версий пакетов.
+
+- **Безопасность**:
+  - Отключите отображение ошибок в продакшен-среде.
+  - Защитите конфигурационные файлы и скрытые директории от доступа извне.
+
+---
 
 # Подробная документация по API
 
